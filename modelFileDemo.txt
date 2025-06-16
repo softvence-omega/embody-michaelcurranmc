@@ -1,0 +1,35 @@
+src/
+├── main.ts
+├── app.module.ts
+├── config/                     # ENV + Cloudinary + Mongo
+│   ├── cloudinary.config.ts
+│   ├── mongo.config.ts
+│   └── socket.config.ts
+│
+├── common/
+│   ├── filters/                # Global error handling
+│   ├── interceptors/          # Logging, transform, etc.
+│   ├── decorators/            # Auth, role decorators
+│   └── utils/                 # Cloudinary, validators
+│
+├── modules/
+│   ├── auth/                  # JWT, Passport, roles
+│   ├── users/                 # User profile, login, follow system
+│   ├── posts/                 # Post, likes, comments, shares
+│   ├── media/                 # Cloudinary Upload (images/videos)
+│   ├── gym/                   # Core fitness models
+│   │   ├── workouts/
+│   │   ├── exercises/
+│   │   ├── workout_sessions/
+│   │   ├── progress/
+│   │   └── checkins/
+│   ├── shop/                  # Purchases, shop items
+│   ├── templates/             # Templates and template_exercises
+│   ├── notifications/         # Real-time messages
+│   ├── settings/              # User settings/preferences
+│   └── sockets/               # Gateway for chat, likes, etc.
+│
+├── schemas/                   # Centralized schema registration
+│
+└── cloudinary/
+    └── cloudinary.service.ts  # Upload logic

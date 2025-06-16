@@ -1,0 +1,33 @@
+src/
+└── modules/
+    ├── users/
+    │   └── schemas/user.schema.ts
+    ├── posts/
+    │   ├── schemas/post.schema.ts
+    │   ├── schemas/post-like.schema.ts
+    │   ├── schemas/post-comment.schema.ts
+    │   └── schemas/post-share.schema.ts
+    ├── workouts/
+    │   ├── schemas/workout.schema.ts
+    │   ├── schemas/workout-session.schema.ts
+    │   └── schemas/workout-exercise.schema.ts
+    ├── exercises/
+    │   └── schemas/exercise.schema.ts
+    ├── progress/
+    │   └── schemas/progress.schema.ts
+    ├── templates/
+    │   ├── schemas/template.schema.ts
+    │   └── schemas/template-exercise.schema.ts
+    ├── notifications/
+    │   └── schemas/notification.schema.ts
+    ├── gym/
+    │   ├── schemas/gym.schema.ts
+    │   └── schemas/checkin.schema.ts
+    ├── settings/
+    │   └── schemas/settings.schema.ts
+    ├── shop/
+    │   ├── schemas/shop-item.schema.ts
+    │   └── schemas/purchase.schema.ts
+    └── friends/
+        ├── schemas/friend.schema.ts
+        └── schemas/achievement.schema.ts
