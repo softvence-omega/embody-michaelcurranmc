@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  // output  = "./node_modules/@prisma/client"
   output   = "../generated/prisma"
 }
 
@@ -15,114 +16,126 @@ datasource db {
 }
 
 model admin {
-  id            String @id @default(uuid()) @map("_id")
-  email         String @unique
-  password      String
-  displayName   String?
-  bio           String?
-  is_premium   Boolean @default(false)
-  privecy_setting String @default("public")
-  last_login_at DateTime? @default(now())
-  posts         Post[] @relation("AdminPosts")
+  id              String    @id @default(uuid()) @map("_id")
+  email           String    @unique
+  password        String
+  displayName     String?
+  bio             String?
+  is_premium      Boolean   @default(false)
+  privecy_setting String    @default("public")
+  last_login_at   DateTime? @default(now())
+  posts           Post[]    @relation("AdminPosts")
 
-  role          Role    @default(admin)
+  role Role @default(admin)
 }
 
 model User {
-  id            String @id @default(uuid()) @map("_id")
-  email         String @unique
-  password      String
-  displayName   String?
-  bio           String?
-  is_premium   Boolean @default(false)
-  privecy_setting String @default("public")
-  last_login_at DateTime? @default(now())
-  posts         Post[] @relation("UserPosts")
-  postComments  PostComment[] // Added relation field
-  postLikes     PostLike[]    // Added opposite relation field
-  postShares    PostShare[]   // Added opposite relation field
-  workouts      Workouts[]    @relation("UserWorkouts")
+  id              String        @id @default(uuid()) @map("_id")
+  email           String        @unique
+  password        String
+  displayName     String?
+  bio             String?
+  is_premium      Boolean       @default(false)
+  privecy_setting String        @default("public")
+  last_login_at   DateTime?     @default(now())
+  posts           Post[]        @relation("UserPosts")
+  postComments    PostComment[] // Added relation field
+  postLikes       PostLike[] // Added opposite relation field
+  postShares      PostShare[] // Added opposite relation field
+  workouts        Workouts[]    @relation("UserWorkouts")
+  refreshToken    RefreshToken? // Added opposite relation field
 
-  role          Role    @default(user)
+  role Role @default(user)
+}
 
+model RefreshToken {
+  id        String   @id @default(uuid()) @map("_id")
+  token     String // Store hashed token
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
 }
 
 enum Role {
-  user 
+  user
   admin
 }
 
-
 model Post {
-  id          String   @id @default(uuid()) @map("_id")
-  title       String
-  content     String?
-  image_url   String?
-  video_url   String?
-  caption    String?
-  is_public  Boolean @default(true)
-  is_featured Boolean @default(false)
-  post_likes PostLike[]
+  id            String        @id @default(uuid()) @map("_id")
+  title         String
+  content       String?
+  image_url     String?
+  video_url     String?
+  caption       String?
+  is_public     Boolean       @default(true)
+  is_featured   Boolean       @default(false)
+  post_likes    PostLike[]
   post_comments PostComment[]
-  post_shares PostShare[]
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  post_shares   PostShare[]
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
 
-  user        User?     @relation("UserPosts", fields: [user_id], references: [id])
-  user_id     String?
+  user    User?   @relation("UserPosts", fields: [user_id], references: [id])
+  user_id String?
 
-  admin       admin?    @relation("AdminPosts", fields: [admin_id], references: [id])
-  admin_id    String?
+  admin    admin?  @relation("AdminPosts", fields: [admin_id], references: [id])
+  admin_id String?
 
   @@index([created_at])
 }
 
 model PostLike {
-  id        String   @id @default(uuid()) @map("_id")
-  user_id   String
-  post_id   String
+  id         String   @id @default(uuid()) @map("_id")
+  user_id    String
+  post_id    String
   created_at DateTime @default(now())
 
-  user      User     @relation(fields: [user_id], references: [id])
-  post      Post     @relation(fields: [post_id], references: [id])
+  user User @relation(fields: [user_id], references: [id])
+  post Post @relation(fields: [post_id], references: [id])
 
   @@unique([user_id, post_id])
 }
+
 model PostComment {
-  id        String   @id @default(uuid()) @map("_id")
-  user      User     @relation(fields: [user_id], references: [id])
-  user_id   String
-  post      Post     @relation(fields: [post_id], references: [id])
-  post_id   String
+  id         String   @id @default(uuid()) @map("_id")
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String
+  post       Post     @relation(fields: [post_id], references: [id])
+  post_id    String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@index([created_at])
 }
+
 model PostShare {
-  id        String   @id @default(uuid()) @map("_id")
-  user      User     @relation(fields: [user_id], references: [id])
-  user_id   String
-  post      Post     @relation(fields: [post_id], references: [id])
-  post_id   String
+  id         String   @id @default(uuid()) @map("_id")
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String
+  post       Post     @relation(fields: [post_id], references: [id])
+  post_id    String
   created_at DateTime @default(now())
 
   @@unique([user_id, post_id])
-} 
+}
 
 model Workouts {
-  id          String   @id @default(uuid()) @map("_id   ")
+  id          String  @id @default(uuid()) @map("_id   ")
   title       String
-  template_id  String?
-  is_public   Boolean @default(true )
- 
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  template_id String?
+  is_public   Boolean @default(true)
 
-  user        User?     @relation("UserWorkouts", fields: [user_id], references: [id])
-  user_id     String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  template    Template? @relation("TemplateWorkouts", fields: [template_id], references: [id])
+  user    User?   @relation("UserWorkouts", fields: [user_id], references: [id])
+  user_id String?
+
+  template Template? @relation("TemplateWorkouts", fields: [template_id], references: [id])
 
   // admin       admin?    @relation("AdminWorkouts", fields: [admin_id], references: [id])
   // admin_id    String?
@@ -136,8 +149,7 @@ model Template {
   description String?
   is_public   Boolean @default(true)
 
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  workouts    Workouts[] @relation("TemplateWorkouts") 
-
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  workouts   Workouts[] @relation("TemplateWorkouts")
 }
