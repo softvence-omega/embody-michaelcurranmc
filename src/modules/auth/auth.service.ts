@@ -6,11 +6,8 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { ref } from 'process';
 
-// import { LoginDto } from './dto/login.dto'; // Uncomment and use if needed
-// import { User } from '@prisma/client';
-import { RefreshToken } from '../../../generated/prisma/index';
-import { access } from 'fs';
 
 interface User {
   id: string;
@@ -39,7 +36,7 @@ export class AuthService {
     role = 'user',
   }: SignupInput & { role?: 'user' | 'admin' }) {
     if (!email || !password) {
-      throw new UnauthorizedException('Email and password are required');
+      throw new BadRequestException('Email and password are required');
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new UnauthorizedException('Invalid email format');
@@ -66,7 +63,20 @@ export class AuthService {
         role,
       },
     });
-    return this.generateToken(user);
+    console.log('User created:', user);
+    const token = this.generateToken(user);
+
+    return {
+      message: 'User created successfully',
+      ...token,
+      user: {
+        id: user.id,
+        name: user.displayName,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role,
+      }
+    }
   }
 
   async signin(email: string, password: string) {
@@ -83,7 +93,19 @@ export class AuthService {
     if (!isMatchPassword) {
       throw new UnauthorizedException('Password is incorrect');
     }
-    return this.generateToken(user);
+    console.log('User signed in:', user);
+    const token =  this.generateToken(user);
+    return {
+      message: 'Login Successfull',
+      ...token,
+      refreshToken: await this.generateRefreshToken(user),
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role,
+      }
+    }
   }
 
   private generateToken(user: User) {
@@ -91,8 +113,9 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
-      iss: 'project-name',
-      aud: 'embody-api',
+       iss: 'my-app',
+       aud: 'my-app-users',
+   
     };
     return {
       access_token: this.jwtService.sign(payload, {
@@ -100,11 +123,12 @@ export class AuthService {
       }),
     };
   }
+  
 
 async generateRefreshToken(user: User) {
     const payload = { sub: user.id, type: 'refresh' };
     const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: '7d', // Long-lived refresh token
+      expiresIn: '7d', 
     });
 
     // Store refresh token in DB (with hash for security)
@@ -121,14 +145,14 @@ async generateRefreshToken(user: User) {
 
 
   //refreshtoken endpoint
-  async refreshAccessToken(RefreshToken: string) {
+  async refreshAccessToken(refreshToken: string) {
     try {
-        const payload = this.jwtService.verify(RefreshToken);
+        const payload = this.jwtService.verify(refreshToken);
         
         const storedToken = await this.prisma.refreshToken.findFirst({
             where: {userId: payload.sub, expiresAt: { gt: new Date() }},
         })
-        if(!storedToken || !(await bcrypt.compare(RefreshToken, storedToken.token))){
+        if(!storedToken || !(await bcrypt.compare(refreshToken, storedToken.token))){
             throw new UnauthorizedException('Invalid refresh token');
         }
         const user = await this.prisma.user.findUnique({
@@ -139,79 +163,20 @@ async generateRefreshToken(user: User) {
         }
         await this.prisma.refreshToken.delete({
             where: { id: storedToken.id }})
-
-            return {
-                access_token: this.generateToken(user).access_token,
-                RefreshToken: await this.generateRefreshToken(user)
-            }
-    } catch (error) {
-        throw new UnauthorizedException('Invalid refresh token');
-    }
+        console.log('Refresh token deleted:', storedToken.id);
+          return {
+              access_token: this.generateToken(user).access_token,
+              RefreshToken: await this.generateRefreshToken(user),
+              
+          }
+        
+      
+          
+          
+  } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
   }
 }
+ 
 
-//================old api ==================
-
-// @Injectable()
-// export class AuthService {
-//     constructor(private prisma: PrismaService, private jwtService: JwtService) {}
-//     async singupUser(email: string, password: string, displayName?: string) {
-//         const hashed =  await bcrypt.hash(password, 10);
-//         const user = await this.prisma.user.create({
-//             data: {
-//                 email,
-//                 password: hashed,
-//                 displayName,
-//                 role: 'user'
-//             }
-//         });
-//         return this.generateToken(user);
-//     }
-
-//     async signupAdmin(email: string, password: string, displayname?: string) {
-//         const hashed = await bcrypt.hash(password, 10);
-//         const user = await this.prisma.user.create({
-//             data: {
-//                 email,
-//                 password: hashed,
-//                 displayName: displayname,
-//                 role: 'admin'
-//             }
-//         });
-//         return this.generateToken(user);
-//     }
-
-//     async signinUser(email: string, password: string) {
-//         const user = await this.prisma.user.findUnique({
-//             where: {email}
-//         })
-//         if(!user) {
-//             throw new UnauthorizedException('User is not found');
-//         }
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         if(!isMatch) {
-//             throw new UnauthorizedException("Password is not corrent");
-//         }
-//         return this.generateToken(user);
-//     }
-//     async signinAdmin(email: string, password: string) {
-//         const admin = await this.prisma.admin.findUnique({
-//             where: { email }
-//         });
-//         if (!admin) {
-//             throw new UnauthorizedException('admin email is not matched');
-//         }
-//         const isMatch = await bcrypt.compare(password, admin.password);
-//         if (!isMatch) {
-//             throw new UnauthorizedException("Password is not correct");
-//         }
-//         return this.generateToken(admin);
-//     }
-
-//     private generateToken(user: any) {
-//         const payload = { sub: user.id, email: user.email, role: user.role };
-//         return {
-//             access_token: this.jwtService.sign(payload),
-//         };
-//     }
-// }
+}

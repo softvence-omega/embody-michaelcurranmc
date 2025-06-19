@@ -1,0 +1,22 @@
+Sign-up Process:
+1. User Interface:
+The user interacts with a form on a website or application, entering their desired username/email, password, and potentially other details (e.g., name, phone number).
+2. Data Validation:
+The application validates the entered data (e.g., email format, password strength).
+3. User Creation:
+If the data is valid, the application creates a new user record in a database. This record typically includes a unique user ID, username/email, hashed password, and potentially other profile information.
+4. Verification (Optional):
+To enhance security, an email or SMS verification step might be included, where the user confirms their contact information.
+5. Authentication:
+Upon successful verification (if included), the user is authenticated and a session is initiated. 
+Sign-in Process:
+User Interface: The user enters their username/email and password into a login form.
+Authentication Request: The application sends these credentials to the backend for verification.
+Password Hashing and Comparison: The backend retrieves the user's stored hashed password from the database. It then hashes the entered password using the same algorithm and compares the two hashes.
+Authentication Result: If the hashes match, the user is authenticated. Otherwise, the login attempt is rejected.
+Session Creation: A successful login initiates a user session, often using a session ID stored in a cookie or local storage, allowing the user to access protected resources. 
+Diagram Examples:
+Activity Diagram:
+Shows the flow of actions involved in both sign-up and sign-in processes, including decision points (e.g., valid data or invalid data).
+Sequence Diagram:
+Illustrates the interaction between the user, the application, and the database during the sign-up and sign-in processes. It shows the sequence of messages and responses exchanged between these components. 

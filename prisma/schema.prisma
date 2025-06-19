@@ -14,7 +14,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
+ 
 model admin {
   id              String    @id @default(uuid()) @map("_id")
   email           String    @unique
