@@ -1,6 +1,6 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEmail, MinLength,IsOptional,IsEnum } from 'class-validator';
+import { IsString, IsEmail, MinLength, IsOptional, IsEnum, IsDateString } from 'class-validator';
 
 
 
@@ -31,6 +31,16 @@ export class SignupDto {
   @IsOptional()
   @IsEnum(Role)
   role?: Role = Role.user;
+
+   @ApiPropertyOptional({ example: new Date().toISOString() })
+  @IsOptional()
+  @IsDateString()
+  createdAt?: string;
+
+  @ApiPropertyOptional({ example: new Date().toISOString() })
+  @IsOptional()
+  @IsDateString()
+  updatedAt?: string;
 
 }
 

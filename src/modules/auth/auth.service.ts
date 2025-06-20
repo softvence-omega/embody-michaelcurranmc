@@ -7,6 +7,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ref } from 'process';
+import { create } from 'domain';
 
 
 interface User {
@@ -15,6 +16,7 @@ interface User {
   password: string;
   displayName?: string | null;
   role: 'user' | 'admin';
+  createdAt?: Date;
 }
 interface SignupInput {
   email: string;
@@ -104,6 +106,7 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         role: user.role,
+        createdAt: new Date().toISOString(),
       }
     }
   }
