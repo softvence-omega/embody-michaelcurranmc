@@ -14,7 +14,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
- 
+
 model admin {
   id              String    @id @default(uuid()) @map("_id")
   email           String    @unique
@@ -30,11 +30,12 @@ model admin {
 }
 
 model User {
-  id              String        @id @default(uuid()) @map("_id")
-  email           String        @unique
-  password        String
-  displayName     String?
-  bio             String?
+  id          String  @id @default(uuid()) @map("_id")
+  email       String  @unique
+  password    String
+  displayName String?
+  bio         String?
+
   is_premium      Boolean       @default(false)
   privecy_setting String        @default("public")
   last_login_at   DateTime?     @default(now())
@@ -45,9 +46,24 @@ model User {
   workouts        Workouts[]    @relation("UserWorkouts")
   refreshToken    RefreshToken? // Added opposite relation field
 
-  role            Role @default(user)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt 
+  // Opposite relation fields for UserFollow
+  followers UserFollow[] @relation("Following")
+  following UserFollow[] @relation("Follower")
+
+  role      Role     @default(user)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserFollow {
+  id          String   @id @default(uuid()) @map("_id")
+  follower    User     @relation("Follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("Following", fields: [followingId], references: [id])
+  followingId String
+  created_at  DateTime @default(now())
+
+  @@unique([followerId, followingId])
 }
 
 model RefreshToken {
@@ -67,19 +83,22 @@ enum Role {
 }
 
 model Post {
-  id            String        @id @default(uuid()) @map("_id")
-  title         String
-  content       String?
-  image_url     String?
-  video_url     String?
-  caption       String?
-  is_public     Boolean       @default(true)
-  is_featured   Boolean       @default(false)
-  post_likes    PostLike[]
-  post_comments PostComment[]
-  post_shares   PostShare[]
-  created_at    DateTime      @default(now())
-  updated_at    DateTime      @updatedAt
+  id             String        @id @default(uuid()) @map("_id")
+  title          String
+  content        String?
+  caption        String?
+  is_public      Boolean       @default(true)
+  is_featured    Boolean
+  // Media
+  image_url      String?
+  image_publicId String? // For Cloudinary deletion
+  video_url      String?
+  video_publicId String?
+  post_likes     PostLike[]
+  post_comments  PostComment[]
+  post_shares    PostShare[]
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
 
   user    User?   @relation("UserPosts", fields: [user_id], references: [id])
   user_id String?
@@ -103,13 +122,17 @@ model PostLike {
 }
 
 model PostComment {
-  id         String   @id @default(uuid()) @map("_id")
-  user       User     @relation(fields: [user_id], references: [id])
+  id         String        @id @default(uuid()) @map("_id")
+  content    String
+  user       User          @relation(fields: [user_id], references: [id])
   user_id    String
-  post       Post     @relation(fields: [post_id], references: [id])
+  post       Post          @relation(fields: [post_id], references: [id])
   post_id    String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  parent_id  String? // For nested comments
+  parent     PostComment?  @relation("CommentReplies", fields: [parent_id], references: [id])
+  replies    PostComment[] @relation("CommentReplies")
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
 
   @@index([created_at])
 }

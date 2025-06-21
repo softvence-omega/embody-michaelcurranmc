@@ -10,6 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport'; 
 import { AuthModule } from './modules/auth/auth.module'; 
 import { UsersModule } from './modules/users/users.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 dotenv.config();
 
@@ -25,6 +26,8 @@ dotenv.config();
     PrismaModule,
     AuthModule, 
     UsersModule,
+    CloudinaryModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],
