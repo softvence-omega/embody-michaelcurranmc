@@ -33,6 +33,7 @@ model User {
   id          String  @id @default(uuid()) @map("_id")
   email       String  @unique
   password    String
+  name        String
   displayName String?
   bio         String?
 
@@ -53,6 +54,7 @@ model User {
   role      Role     @default(user)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([displayName])
 }
 
 model UserFollow {
@@ -99,7 +101,8 @@ model Post {
   post_shares    PostShare[]
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
-
+  like_count     Int @default(0)
+  comment_count  Int @default(0)
   user    User?   @relation("UserPosts", fields: [user_id], references: [id])
   user_id String?
 
@@ -107,6 +110,9 @@ model Post {
   admin_id String?
 
   @@index([created_at])
+  @@index([title])
+  @@index([content])
+  @@index([caption])
 }
 
 model PostLike {
