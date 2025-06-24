@@ -21,7 +21,7 @@ export class GetUserResponseDto {
     @ApiProperty({ example: 'user', description: 'Role of the user, e.g., user or admin' })
     role: 'user' | 'admin';
 
-     @ApiProperty({ example: '2023-10-01T12:00:00Z', description: 'Timestamp when the user was created' })
-     createdAt: Date;
+    //  @ApiProperty({ example: '2023-10-01T12:00:00Z', description: 'Timestamp when the user was created' })
+    //  createdAt: Date;
 
 }

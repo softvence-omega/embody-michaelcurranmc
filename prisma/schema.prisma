@@ -19,6 +19,7 @@ model admin {
   id              String    @id @default(uuid()) @map("_id")
   email           String    @unique
   password        String
+  name           String?
   displayName     String?
   bio             String?
   is_premium      Boolean   @default(false)
@@ -33,7 +34,7 @@ model User {
   id          String  @id @default(uuid()) @map("_id")
   email       String  @unique
   password    String
-  name        String
+  name        String?
   displayName String?
   bio         String?
 

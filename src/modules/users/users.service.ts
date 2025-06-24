@@ -19,6 +19,7 @@ export class UsersService {
         return {
             id: user.id,
             email: user.email,
+            name: user.name,
             displayName: user.displayName || null,
             role: user.role,
         };
@@ -29,6 +30,7 @@ export class UsersService {
             select: {
                 id: true,
                 email: true,
+                name: true,
                 displayName: true,
                 role: true,
                 is_premium: true,

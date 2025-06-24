@@ -6,6 +6,7 @@ import { Readable } from 'stream';
 @Injectable()
 export class CloudinaryService {
   async uploadImage(file: Express.Multer.File): Promise<UploadApiResponse> {
+    try{
     return new Promise((resolve, reject) => {
       const upload = cloudinary.uploader.upload_stream(
         {
@@ -24,9 +25,13 @@ export class CloudinaryService {
       );
       Readable.from(file.buffer).pipe(upload);
     });
+  } catch(err) {
+    console.error("UploadImage Failed", err);
+    throw new Error('Image upload failed');
   }
-
+  }
   async uploadVideo(file: Express.Multer.File): Promise<UploadApiResponse> {
+    try{
     return new Promise((resolve, reject) => {
       const uploadVideo = cloudinary.uploader.upload_stream(
         {
@@ -41,7 +46,11 @@ export class CloudinaryService {
       );
       Readable.from(file.buffer).pipe(uploadVideo);
     });
+  } catch(err) {
+     console.error('uploadVideo failed:', err);
+    throw new Error('Video upload failed');
   }
+}
 
   async deleteImage(publicId: string): Promise<void> {
     return new Promise((resolve, reject) => {

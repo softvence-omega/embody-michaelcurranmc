@@ -2,12 +2,15 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  Logger,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ref } from 'process';
 import { create } from 'domain';
+import { UsersService } from '../users/users.service';
 
 
 interface User {
@@ -26,6 +29,7 @@ interface SignupInput {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger();
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -37,6 +41,7 @@ export class AuthService {
     displayName,
     role = 'user',
   }: SignupInput & { role?: 'user' | 'admin' }) {
+    try{
     if (!email || !password) {
       throw new BadRequestException('Email and password are required');
     }
@@ -61,6 +66,7 @@ export class AuthService {
       data: {
         email,
         password: hashedPassword,
+        name: displayName || email, // Provide a value for 'name'
         displayName,
         role,
       },
@@ -73,15 +79,23 @@ export class AuthService {
       ...token,
       user: {
         id: user.id,
-        name: user.displayName,
+        name: user.name,
         email: user.email,
         displayName: user.displayName,
         role: user.role,
       }
+    };
+    } catch (err) {
+      console.log('Signup error:', err);
+      if(err instanceof BadRequestException || err instanceof UnauthorizedException) {
+        throw err;
+      }
+      throw new BadRequestException('Failed to create user');
     }
   }
 
   async signin(email: string, password: string) {
+    
     if (!email || !password) {
       throw new UnauthorizedException('Email and password are required');
     }
@@ -91,10 +105,12 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+    // Removed isLoggedIn check as user object does not have this property
     const isMatchPassword = await bcrypt.compare(password, user.password);
     if (!isMatchPassword) {
       throw new UnauthorizedException('Password is incorrect');
     }
+
     console.log('User signed in:', user);
     const token =  this.generateToken(user);
     return {
@@ -129,22 +145,34 @@ export class AuthService {
   
 
 async generateRefreshToken(user: User) {
+  try{
     const payload = { sub: user.id, type: 'refresh' };
     const refreshToken = this.jwtService.sign(payload, {
       expiresIn: '7d', 
     });
 
     // Store refresh token in DB (with hash for security)
-    await this.prisma.refreshToken.create({
-      data: {
+    await this.prisma.refreshToken.upsert({
+      where: { userId: user.id },
+      create: {
         token: await bcrypt.hash(refreshToken, 10),
         userId: user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      },
+      update: {
+        token: await bcrypt.hash(refreshToken, 10),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
     });
 
     return refreshToken;
+  } catch(err) {
+    this.logger.error('Failed to save refresh token', err);
+  throw new InternalServerErrorException('Token generation failed');
+
+
   }
+}
 
 
   //refreshtoken endpoint
@@ -180,6 +208,8 @@ async generateRefreshToken(user: User) {
       throw new UnauthorizedException('Invalid refresh token');
   }
 }
+
+
  
 
 }

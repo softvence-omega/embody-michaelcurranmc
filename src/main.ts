@@ -10,6 +10,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as cookieParser from 'cookie-parser';
+import { AllExceptionsFilter } from './error/errorHandler';
+// import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 
 dotenv.config();
 async function bootstrap() {
@@ -36,7 +38,8 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-
+  // app.useGlobalFilters(new AllExceptionsFilter())
+//useGlobalFilters(new AllExceptionsFilter());
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
