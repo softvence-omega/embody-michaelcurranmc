@@ -20,3 +20,81 @@ Activity Diagram:
 Shows the flow of actions involved in both sign-up and sign-in processes, including decision points (e.g., valid data or invalid data).
 Sequence Diagram:
 Illustrates the interaction between the user, the application, and the database during the sign-up and sign-in processes. It shows the sequence of messages and responses exchanged between these components. 
+
+
+
+ async createPost(
+    dto: CreatePostDto,
+    file: Express.Multer.File | null,
+    userId: string,
+  ) {
+    // Validate userId
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    // Validate user existence
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Handle media upload
+    let mediaUpload: {
+      secure_url: string;
+      public_id: string;
+      resource_type: 'image' | 'video';
+    } | null = null;
+    if (file) {
+      const mime = file.mimetype;
+      this.logger.log(`File MIME type: ${mime}`);
+      if (mime.startsWith('image/')) {
+        const uploadResult = await this.cloudinaryService.uploadImage(file);
+        if (uploadResult.resource_type !== 'image') {
+          throw new BadRequestException(
+            `Expected image resource, got ${uploadResult.resource_type}`,
+          );
+        }
+        mediaUpload = {
+          secure_url: uploadResult.secure_url,
+          public_id: uploadResult.public_id,
+          resource_type: uploadResult.resource_type,
+        };
+      } else if (mime.startsWith('video/')) {
+        const uploadResult = await this.cloudinaryService.uploadVideo(file);
+        if (uploadResult.resource_type !== 'video') {
+          throw new BadRequestException(
+            `Expected video resource, got ${uploadResult.resource_type}`,
+          );
+        }
+        mediaUpload = {
+          secure_url: uploadResult.secure_url,
+          public_id: uploadResult.public_id,
+          resource_type: uploadResult.resource_type,
+        };
+      } else {
+        throw new BadRequestException(`Unsupported file type: ${mime}`);
+      }
+    }
+
+    // Create post
+    const post = await this.prismaService.post.create({
+      data: {
+        title: dto.title,
+        content: dto.content,
+        caption: dto.caption,
+        is_public: dto.is_public ?? true,
+        is_featured: dto.is_featured ?? false,
+        user_id: userId,
+        image_url:
+          mediaUpload?.resource_type === 'image' ? mediaUpload.secure_url : null,
+        video_url:
+          mediaUpload?.resource_type === 'video' ? mediaUpload.secure_url : null,
+      },
+    });
+
+    this.logger.log(`Created post: ${post.id}`);
+    return post;
+  }

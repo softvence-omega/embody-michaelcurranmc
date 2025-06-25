@@ -30,88 +30,7 @@ export class PostService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  //   async createPost(
-  //     dto: CreatePostDto,
-  //     file: Express.Multer.File | null,
-  //     userId: string,
-  //   ) {
-  //     try {
 
-  //     // Validate user existence (optional, depending on requirements)
-  //     const user = await this.prismaService.user.findUnique({
-
-  //       where: { id: userId },
-  //     });
-  //     if (!user) {
-  //       throw new NotFoundException('User not found');
-  //     }
-
-  //     // Handle media upload
-  //     let mediaUpload: {
-  //       secure_url: string;
-  //       public_id: string;
-  //       resource_type: 'image' | 'video';
-  //     } | null = null;
-  //     if (file) {
-  //       const mime = file.mimetype;
-  //       console.log('File MIME type:', mime);
-  //       if (mime.startsWith('image/')) {
-  //         const uploadResult = await this.cloudinaryService.uploadImage(file);
-  //         if (uploadResult.resource_type !== 'image') {
-  //           throw new BadRequestException(
-  //             `Expected image resource, got ${uploadResult.resource_type}`,
-  //           );
-  //         }
-  //         mediaUpload = {
-  //           secure_url: uploadResult.secure_url,
-  //           public_id: uploadResult.public_id,
-  //           resource_type: uploadResult.resource_type,
-  //         };
-  //       } else if (mime.startsWith('video/')) {
-  //         const uploadResult = await this.cloudinaryService.uploadVideo(file);
-  //         if (uploadResult.resource_type !== 'video') {
-  //           throw new BadRequestException(
-  //             `Expected video resource, got ${uploadResult.resource_type}`,
-  //           );
-  //         }
-  //         mediaUpload = {
-  //           secure_url: uploadResult.secure_url,
-  //           public_id: uploadResult.public_id,
-  //           resource_type: uploadResult.resource_type,
-  //         };
-  //       } else {
-  //         throw new BadRequestException(`Unsupported file type: ${mime}`);
-  //       }
-  //     }
-
-  //     // Create post
-  //     return this.prismaService.post.create({
-  //       data: {
-  //         title: dto.title,
-  //         content: dto.content,
-  //         caption: dto.caption ?? null,
-  //         is_public: dto.is_public ?? true,
-  //         is_featured: dto.is_featured ?? true,
-  //         user_id: userId,
-  //         image_url:
-  //           mediaUpload?.resource_type === 'image'
-  //             ? mediaUpload.secure_url
-  //             : null,
-  //         video_url:
-  //           mediaUpload?.resource_type === 'video'
-  //             ? mediaUpload.secure_url
-  //             : null,
-  //       },
-  //     });
-  //   } catch( err) {
-  //     console.error('Post creation failed:', err);
-  //     if (err instanceof BadRequestException || err instanceof NotFoundException) {
-  //       throw err;
-  //     }
-  //     throw new InternalServerErrorException('Failed to create post');
-
-  //   }
-  // }
 
   async createPost(
     dto: CreatePostDto,
@@ -119,7 +38,11 @@ export class PostService {
     userId: string,
   ) {
     try {
-      // Step 1: Validate user
+
+      if (!userId) {
+        throw new BadRequestException('User ID is required');
+      }
+
       const user = await this.prismaService.user.findUnique({
         where: { id: userId },
       });
@@ -127,16 +50,21 @@ export class PostService {
         throw new NotFoundException('User not found');
       }
 
-      // Step 2: Initialize media object
+      // Optional: Restrict to specific roles (commented out)
+      // if (user.role !== 'ADMIN') {
+      //   throw new ForbiddenException('Only admins can create posts');
+      // }
+
       let mediaUpload: {
         secure_url: string;
         public_id: string;
         resource_type: 'image' | 'video';
       } | null = null;
 
-      // Step 3: Handle optional file
+
       if (file?.mimetype) {
         const mime = file.mimetype;
+        this.logger.log(`File MIME type: ${mime}`);
 
         try {
           if (mime.startsWith('image/')) {
@@ -167,12 +95,12 @@ export class PostService {
             throw new BadRequestException(`Unsupported file type: ${mime}`);
           }
         } catch (uploadErr) {
-          console.error('Cloudinary Upload Error:', uploadErr);
+          this.logger.error('Cloudinary Upload Error:', uploadErr);
           throw new InternalServerErrorException('Media upload failed');
         }
       }
 
-      // Step 4: Create the post
+      // Step 5: Create the post
       const createdPost = await this.prismaService.post.create({
         data: {
           title: dto.title ?? 'Untitled Post',
@@ -192,18 +120,21 @@ export class PostService {
         },
       });
 
+      this.logger.log(`Created post: ${createdPost.id}`);
       return createdPost;
     } catch (err) {
-      console.error('Post creation error:', err);
+      this.logger.error('Post creation error:', err);
       if (
         err instanceof BadRequestException ||
-        err instanceof NotFoundException
+        err instanceof NotFoundException ||
+        err instanceof InternalServerErrorException
       ) {
         throw err;
       }
       throw new InternalServerErrorException('Failed to create post');
     }
   }
+  ///===============updated post=======
 
   async updatePost(
     postId: string,
@@ -285,6 +216,7 @@ export class PostService {
       },
     });
   }
+
   async getAllPublicPosts() {
     return this.prismaService.post.findMany({
       where: { is_public: true },
@@ -665,3 +597,180 @@ export class PostService {
     }
   }
 }
+
+///=============
+
+//  //   async createPost(
+//     dto: CreatePostDto,
+//     file: Express.Multer.File | null,
+//     userId: string,
+//   ) {
+//     try {
+
+//     // Validate user existence (optional, depending on requirements)
+//     const user = await this.prismaService.user.findUnique({
+
+//       where: { id: userId },
+//     });
+//     if (!user) {
+//       throw new NotFoundException('User not found');
+//     }
+
+//     // Handle media upload
+//     let mediaUpload: {
+//       secure_url: string;
+//       public_id: string;
+//       resource_type: 'image' | 'video';
+//     } | null = null;
+//     if (file) {
+//       const mime = file.mimetype;
+//       console.log('File MIME type:', mime);
+//       if (mime.startsWith('image/')) {
+//         const uploadResult = await this.cloudinaryService.uploadImage(file);
+//         if (uploadResult.resource_type !== 'image') {
+//           throw new BadRequestException(
+//             `Expected image resource, got ${uploadResult.resource_type}`,
+//           );
+//         }
+//         mediaUpload = {
+//           secure_url: uploadResult.secure_url,
+//           public_id: uploadResult.public_id,
+//           resource_type: uploadResult.resource_type,
+//         };
+//       } else if (mime.startsWith('video/')) {
+//         const uploadResult = await this.cloudinaryService.uploadVideo(file);
+//         if (uploadResult.resource_type !== 'video') {
+//           throw new BadRequestException(
+//             `Expected video resource, got ${uploadResult.resource_type}`,
+//           );
+//         }
+//         mediaUpload = {
+//           secure_url: uploadResult.secure_url,
+//           public_id: uploadResult.public_id,
+//           resource_type: uploadResult.resource_type,
+//         };
+//       } else {
+//         throw new BadRequestException(`Unsupported file type: ${mime}`);
+//       }
+//     }
+
+//     // Create post
+//     return this.prismaService.post.create({
+//       data: {
+//         title: dto.title,
+//         content: dto.content,
+//         caption: dto.caption ?? null,
+//         is_public: dto.is_public ?? true,
+//         is_featured: dto.is_featured ?? true,
+//         user_id: userId,
+//         image_url:
+//           mediaUpload?.resource_type === 'image'
+//             ? mediaUpload.secure_url
+//             : null,
+//         video_url:
+//           mediaUpload?.resource_type === 'video'
+//             ? mediaUpload.secure_url
+//             : null,
+//       },
+//     });
+//   } catch( err) {
+//     console.error('Post creation failed:', err);
+//     if (err instanceof BadRequestException || err instanceof NotFoundException) {
+//       throw err;
+//     }
+//     throw new InternalServerErrorException('Failed to create post');
+
+//   }
+// }
+
+// async createPost(
+//   dto: CreatePostDto,
+//   file: Express.Multer.File | null,
+//   userId: string,
+// ) {
+//   try {
+//     // Step 1: Validate user
+//     const user = await this.prismaService.user.findUnique({
+//       where: { id: userId },
+//     });
+//     if (!user) {
+//       throw new NotFoundException('User not found');
+//     }
+
+//     // Step 2: Initialize media object
+//     let mediaUpload: {
+//       secure_url: string;
+//       public_id: string;
+//       resource_type: 'image' | 'video';
+//     } | null = null;
+
+//     // Step 3: Handle optional file
+//     if (file?.mimetype) {
+//       const mime = file.mimetype;
+
+//       try {
+//         if (mime.startsWith('image/')) {
+//           const uploadResult = await this.cloudinaryService.uploadImage(file);
+//           if (uploadResult.resource_type !== 'image') {
+//             throw new BadRequestException(
+//               `Expected image, got ${uploadResult.resource_type}`,
+//             );
+//           }
+//           mediaUpload = {
+//             secure_url: uploadResult.secure_url,
+//             public_id: uploadResult.public_id,
+//             resource_type: uploadResult.resource_type,
+//           };
+//         } else if (mime.startsWith('video/')) {
+//           const uploadResult = await this.cloudinaryService.uploadVideo(file);
+//           if (uploadResult.resource_type !== 'video') {
+//             throw new BadRequestException(
+//               `Expected video, got ${uploadResult.resource_type}`,
+//             );
+//           }
+//           mediaUpload = {
+//             secure_url: uploadResult.secure_url,
+//             public_id: uploadResult.public_id,
+//             resource_type: uploadResult.resource_type,
+//           };
+//         } else {
+//           throw new BadRequestException(`Unsupported file type: ${mime}`);
+//         }
+//       } catch (uploadErr) {
+//         console.error('Cloudinary Upload Error:', uploadErr);
+//         throw new InternalServerErrorException('Media upload failed');
+//       }
+//     }
+
+//     // Step 4: Create the post
+//     const createdPost = await this.prismaService.post.create({
+//       data: {
+//         title: dto.title ?? 'Untitled Post',
+//         content: dto.content ?? '',
+//         caption: dto.caption ?? null,
+//         is_public: dto.is_public ?? true,
+//         is_featured: dto.is_featured ?? false,
+//         user_id: userId,
+//         image_url:
+//           mediaUpload?.resource_type === 'image'
+//             ? mediaUpload.secure_url
+//             : null,
+//         video_url:
+//           mediaUpload?.resource_type === 'video'
+//             ? mediaUpload.secure_url
+//             : null,
+//       },
+//     });
+
+//     return createdPost;
+//   } catch (err) {
+//     console.error('Post creation error:', err);
+//     if (
+//       err instanceof BadRequestException ||
+//       err instanceof NotFoundException
+//     ) {
+//       throw err;
+//     }
+//     throw new InternalServerErrorException('Failed to create post');
+//   }
+// }

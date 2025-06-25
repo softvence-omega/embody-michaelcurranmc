@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
+import { Type } from 'class-transformer';
 
 
 export class CreatePostDto{
@@ -22,11 +22,13 @@ export class CreatePostDto{
     @ApiProperty({ description: 'Is post public?', default: true, required: false })
     @IsOptional()
     @IsBoolean()
+    @Type(() => Boolean)
     is_public?: boolean;
 
     @ApiProperty({ description: 'Is post featured?', default: false, required: false})
     @IsOptional()
     @IsBoolean()
+    @Type(() => Boolean)
     is_featured?: boolean;
 
     @ApiProperty({ description: 'Post image URL', required: false, example: 'https://example.com/image.jpg' })

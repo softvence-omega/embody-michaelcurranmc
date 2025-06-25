@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class UpdatePostDto {
   @ApiProperty({ description: 'Post title', required: false })
@@ -20,10 +21,12 @@ export class UpdatePostDto {
   @ApiProperty({ description: 'Is post public?', required: false })
   @IsOptional()
   @IsBoolean()
+  @Type(() => Boolean)
   is_public?: boolean;
 
   @ApiProperty({ description: 'Is post featured?', required: false })
   @IsOptional()
   @IsBoolean()
+  @Type(() => Boolean)
   is_featured?: boolean;
 }

@@ -27,8 +27,14 @@ async function bootstrap() {
   // const prismaService = app.get(PrismaService);
   // await prismaService.enableShutdownHooks(app);
   // app.useGlobalGuards(new JwtAuthGuard(), new RolesGuard(new Reflector()));
-  app.use(cookieParser())
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.use(cookieParser());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
   const config = new DocumentBuilder()
     .setTitle('Auth API')
     .setDescription('API for authentication and authorization')
@@ -39,12 +45,10 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   // app.useGlobalFilters(new AllExceptionsFilter())
-//useGlobalFilters(new AllExceptionsFilter());
+  //useGlobalFilters(new AllExceptionsFilter());
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
   console.log(`Application is running on : ${port}`);
 }
 bootstrap();
-
-
