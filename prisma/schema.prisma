@@ -19,7 +19,7 @@ model admin {
   id              String    @id @default(uuid()) @map("_id")
   email           String    @unique
   password        String
-  name           String?
+  name            String?
   displayName     String?
   bio             String?
   is_premium      Boolean   @default(false)
@@ -55,6 +55,7 @@ model User {
   role      Role     @default(user)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@index([displayName])
 }
 
@@ -102,13 +103,16 @@ model Post {
   post_shares    PostShare[]
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
-  like_count     Int @default(0)
-  comment_count  Int @default(0)
-  user    User?   @relation("UserPosts", fields: [user_id], references: [id])
-  user_id String?
+  like_count     Int           @default(0)
+  comment_count  Int           @default(0)
+  user           User?         @relation("UserPosts", fields: [user_id], references: [id])
+  user_id        String?
 
   admin    admin?  @relation("AdminPosts", fields: [admin_id], references: [id])
   admin_id String?
+
+  workout    Workouts? @relation(fields: [workout_id], references: [id])
+  workout_id String?    @unique
 
   @@index([created_at])
   @@index([title])
@@ -155,8 +159,13 @@ model PostShare {
   @@unique([user_id, post_id])
 }
 
+enum ExerciseType {
+  strength
+  cardio
+}
+
 model Workouts {
-  id          String  @id @default(uuid()) @map("_id   ")
+  id          String  @id @default(uuid()) @map("_id")
   title       String
   template_id String?
   is_public   Boolean @default(true)
@@ -167,11 +176,50 @@ model Workouts {
   user    User?   @relation("UserWorkouts", fields: [user_id], references: [id])
   user_id String?
 
-  template Template? @relation("TemplateWorkouts", fields: [template_id], references: [id])
+  template  Template?  @relation("TemplateWorkouts", fields: [template_id], references: [id])
+  exercises Exercise[]
+
+  post    Post?   @relation
+  post_id String?
 
   // admin       admin?    @relation("AdminWorkouts", fields: [admin_id], references: [id])
   // admin_id    String?
 
+  @@index([created_at])
+  @@index([user_id])
+  @@index([template_id])
+  @@index([post_id])
+  @@index([title])
+}
+
+model Exercise {
+  id         String        @id @default(uuid()) @map("_id")
+  workout    Workouts      @relation(fields: [workout_id], references: [id])
+  workout_id String
+  name       String
+  type       ExerciseType
+  sets       ExerciseSet[]
+  created_at DateTime      @default(now())
+
+  @@index([workout_id])
+  @@index([name])
+  @@index([type])
+}
+
+model ExerciseSet {
+  id          String   @id @default(uuid()) @map("_id")
+  exercise    Exercise @relation(fields: [exercise_id], references: [id])
+  exercise_id String
+  set_number  Int
+
+  weight      Float?
+  reps        Int?
+  distance_km Float?
+  duration    String
+  created_at  DateTime @default(now())
+
+  @@index([exercise_id])
+  @@index([set_number])
   @@index([created_at])
 }
 

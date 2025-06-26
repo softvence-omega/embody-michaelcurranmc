@@ -103,12 +103,13 @@ export class PostController {
     return this.postService.commentPost(postId, req.user.id, content, parentId);
   }
 
-  @Delete('comment/:id')
+  @Delete('comments/:id')
   @UseGuards(JwtAuthGuard)
   async deleteComment(
     @Param('id') commentId: string, 
     @Req() req: Request & { user: {id: string}}
   ) {
+    console.log('Delete Comment - commentId:', commentId, 'userId:', req.user.id);
     return this.postService.deleteComment(commentId, req.user.id);
   }
 
@@ -130,6 +131,23 @@ export class PostController {
     return this.postService.searchPosts(query, req.user?.id, Number(take) || 10, cursor);
 
   }
+
+  @Get(':id/comments')
+  @UseGuards(JwtAuthGuard)
+  async getComments(
+    @Param('id') postId: string,
+    @Query('skip') skip: string = '0',
+    @Query('take') take: string = '10'
+  ) {
+    console.log('Get comments- postId:', postId, 'Skip:', skip, 'take:', take);
+    const skipNum = parseInt(skip);
+    const takeNum = parseInt(take);
+    if(isNaN(skipNum) || isNaN(takeNum)) {
+      throw new BadRequestException("Invalid skip or take parameters");
+    }
+    return this.postService.getComments(postId, skipNum, takeNum);
+  }
+
 
 
 
