@@ -168,7 +168,9 @@ model Workouts {
   id          String  @id @default(uuid()) @map("_id")
   title       String
   template_id String?
+  description  String?
   is_public   Boolean @default(true)
+  timer_active    Boolean @default(false)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -196,31 +198,31 @@ model Exercise {
   id         String        @id @default(uuid()) @map("_id")
   workout    Workouts      @relation(fields: [workout_id], references: [id])
   workout_id String
-  name       String
-  type       ExerciseType
+  name       String         @default("")
+  type       ExerciseType?
+  timer_active     Boolean @default(false)
   sets       ExerciseSet[]
   created_at DateTime      @default(now())
 
   @@index([workout_id])
   @@index([name])
-  @@index([type])
 }
 
 model ExerciseSet {
   id          String   @id @default(uuid()) @map("_id")
   exercise    Exercise @relation(fields: [exercise_id], references: [id])
   exercise_id String
-  set_number  Int
-
+  set_number  Int  @default(1)
+  timer_active    Boolean @default(false)
   weight      Float?
   reps        Int?
   distance_km Float?
-  duration    String
+  duration    String  @default("00:00:00")
   created_at  DateTime @default(now())
 
   @@index([exercise_id])
   @@index([set_number])
-  @@index([created_at])
+  
 }
 
 model Template {
