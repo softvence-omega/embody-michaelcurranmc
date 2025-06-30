@@ -99,7 +99,7 @@ export class ExerciseDto {
     @IsArray()
     @ValidateNested({each: true})
     @Type(()=> SetDto)
-    setes: SetDto[];
+    sets: SetDto[];
 
     @ApiPropertyOptional({
         description: 'Whether the time is active for this exercise',
@@ -124,6 +124,10 @@ export class CreateWorkoutDto {
     @IsOptional()
     description?: string;
 
+    @IsBoolean()
+    @IsOptional()
+    timer_active?: boolean;
+
     @ApiProperty({
         description: 'List of exercise in the workout',
         type: [ExerciseDto]
@@ -131,5 +135,5 @@ export class CreateWorkoutDto {
     @IsArray()
     @ValidateNested({each: true})
     @Type(()=> ExerciseDto)
-    exercise: ExerciseDto[];
+    exercises: ExerciseDto[];
 }

@@ -221,8 +221,6 @@ model ExerciseSet {
   created_at  DateTime @default(now())
 
   @@index([exercise_id])
-  @@index([set_number])
-  
 }
 
 model Template {

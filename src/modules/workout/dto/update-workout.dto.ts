@@ -23,7 +23,7 @@ export class SetDto {
   @IsNumber()
   @IsPositive()
   @IsOptional()
-  weigth?: number;
+  weight?: number;
 
   @ApiPropertyOptional({ description: ' Number of repetitions', example: 14 })
   @IsPositive()
@@ -91,6 +91,20 @@ export class UpdateWorkoutDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiPropertyOptional({
+    description: ' Whether timer is active for this set',
+    example: false,
+  })
+  timer_active?: boolean;
+
+  @ApiProperty({
+    description: 'Type of Exercise',
+    enum: ExerciseType,
+    example: ExerciseType.strength,
+  })
+  @IsEnum(ExerciseType)
+  type: string;
 
   @ApiPropertyOptional({
     description: 'Array of exercises',

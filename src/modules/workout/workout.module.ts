@@ -6,12 +6,14 @@ import { WorkoutService } from "./workout.service";
 import { WorkoutController } from "./workout.controller";
 import { PrismaModule } from "src/prisma/prisma.module";
 import { AuthModule } from "../auth/auth.module";
+import { ExerciseUtilsService } from "./exercise.utils";
+import { ErrorHandlerService } from "src/error/error-handler.service";
 
 
 @Module ({
     imports: [PrismaModule, AuthModule],
     controllers: [WorkoutController],
-    providers: [PrismaService, CloudinaryService],
+    providers: [PrismaService, CloudinaryService, ExerciseUtilsService,ErrorHandlerService, WorkoutService, ],
     exports:[WorkoutService],
 })
 

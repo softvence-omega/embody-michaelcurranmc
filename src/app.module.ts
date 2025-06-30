@@ -13,6 +13,7 @@ import { UsersModule } from './modules/users/users.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { PostModule } from './modules/posts/post.module';
+import { CommonModule } from './common/common.module';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ dotenv.config();
     UsersModule,
     CloudinaryModule,
     PostModule,
+    CommonModule,
 
   ],
   controllers: [AppController],
