@@ -47,6 +47,8 @@ model User {
   postShares      PostShare[] // Added opposite relation field
   workouts        Workouts[]    @relation("UserWorkouts")
   refreshToken    RefreshToken? // Added opposite relation field
+  isVerified      Boolean @default(false)
+  verificationTokens VerificationToken[] // Added opposite relation field
 
   // Opposite relation fields for UserFollow
   followers UserFollow[] @relation("Following")
@@ -70,10 +72,17 @@ model UserFollow {
   @@unique([followerId, followingId])
 }
 
+model VerificationToken {
+  id      String @id @default(uuid()) @map("_id")
+  userId  String
+  token    String @unique
+  expiresAt   DateTime
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 model RefreshToken {
   id        String   @id @default(uuid()) @map("_id")
   token     String // Store hashed token
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String   @unique
   createdAt DateTime @default(now())
   expiresAt DateTime

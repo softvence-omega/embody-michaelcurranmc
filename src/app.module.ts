@@ -14,6 +14,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { PostModule } from './modules/posts/post.module';
 import { CommonModule } from './common/common.module';
+import { EmailService } from './modules/verify/verify.service';
 
 dotenv.config();
 
@@ -38,7 +39,8 @@ dotenv.config();
 
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, EmailService],
+  exports:[EmailService]
 })
 export class AppModule {}
 

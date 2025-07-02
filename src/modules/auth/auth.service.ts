@@ -12,8 +12,10 @@ import { ref } from 'process';
 import { create } from 'domain';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
-import { RefreshToken } from '../../../generated/prisma/index';
+import { RefreshToken, VerificationToken } from '../../../generated/prisma/index';
 import { access } from 'fs';
+import * as crypto from 'crypto';
+import { EmailService } from '../verify/verify.service';
 
 interface User {
   id: string;
@@ -22,6 +24,7 @@ interface User {
   displayName?: string | null;
   role: 'user' | 'admin';
   createdAt?: Date;
+  isVerified?: boolean;
 }
 interface SignupInput {
   email: string;
@@ -36,6 +39,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   async signup({
@@ -74,6 +78,17 @@ export class AuthService {
           role,
         },
       });
+
+      const VerificationToken = crypto.randomBytes(32).toString('hex');
+      await this.prisma.verificationToken.create({
+        data: {
+          userId: user.id,
+          token: VerificationToken,
+          expiresAt: new Date(Date.now()+ 24 * 60*60*1000) //24 h
+        },
+      });
+      await this.emailService.sendVerificationEmail(email, VerificationToken);
+     
       console.log('User created:', user);
       const token = this.generateToken(user);
 
@@ -86,6 +101,7 @@ export class AuthService {
           email: user.email,
           displayName: user.displayName,
           role: user.role,
+          isVerified: user.isVerified,
         },
       };
     } catch (err) {
@@ -127,6 +143,7 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         role: user.role,
+        isVerified: user.isVerified,
         createdAt: new Date().toISOString(),
       },
     };
@@ -161,10 +178,9 @@ export class AuthService {
       console.error("Token Generation error:" , err);
       throw new UnauthorizedException('Failed to generate token');
     }
-
-
-    
   }
+
+ 
 
   async generateRefreshToken(user: User) {
     try {
@@ -237,7 +253,55 @@ export class AuthService {
       this.logger.error('Refresh token Error:', err);
       throw new UnauthorizedException("Invalid refresh token")
     }
+ 
   }
+     async verifyEmail(token: string): Promise<{message: string}> {
+      if(!token || typeof token !== 'string' || token.length < 64) {
+        throw new BadRequestException('Invalid verification tokem format');
+      }
+      try{
+        return await this.prisma.$transaction(async(prisma) => {
+          const verificationToken = await prisma.verificationToken.findUnique({
+            where: { token},
+            include: { user: true},
+          });
+          if(!verificationToken) {
+            throw new BadRequestException('Invalid verification token');
+          }
+
+          if(verificationToken.expiresAt < new Date()) {
+            await prisma.verificationToken.delete({
+              where: {id: verificationToken.id}
+            });
+            throw new BadRequestException('Expired verification token')
+          }
+
+          await Promise.all([
+            prisma.user.update({
+              where: {id: verificationToken.userId},
+              data: { isVerified: true, updatedAt: new Date()},
+            }),
+            prisma.verificationToken.delete({where: { id: verificationToken.id}}),
+          ]);
+
+          this.logger.log(`Email verified for user ${verificationToken.userId}`);
+          return {
+            message: 'Email verified successfully'
+          };
+        })
+
+      } catch(err) {
+        this.logger.error('Email verification failed', {err, token: this.radactToken(token)});
+        if(err instanceof BadRequestException) throw err;
+        throw new InternalServerErrorException('Email verification service unavailable');
+
+      }
+      
+    }
+
+    private radactToken(token: string): string {
+      return token.length > 8 ? `${token.substring(0,2)}...${token.substring(token.length -2)}` : '[REDACTED]';
+    }
 
   // //refreshtoken endpoint
   // async refreshAccessToken(refreshToken: string) {

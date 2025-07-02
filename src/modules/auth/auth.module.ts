@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { EmailService } from '../verify/verify.service';
 
 
 
@@ -21,32 +22,8 @@ import { PrismaModule } from 'src/prisma/prisma.module';
     ConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, EmailService],
   exports: [AuthService],
 })
 export class AuthModule {}
 
-
-// @Module({
-//     imports: [
-//         ConfigModule.forRoot({
-//             isGlobal: true,
-//         }),
-//         PassportModule,
-//         JwtModule.register({
-//             secret: process.env.JWT_SECRET,
-//             signOptions: { expiresIn: process.env.JWT_EXPIRATION_IN || '1h' },
-//             //inject: [ConfigService],
-//             // useFactory: async (config: ConfigService) => ({
-//             //     secret: process.env.JWT_SECRET || config.get<string>('JWT_SECRET'),
-//             //     signOptions: { expiresIn: process.env.JWT_EXPIRATION_IN || config.get<string>('JWT_EXPIRATION_IN') || '1h' },
-                    
-//             // }),
-//         }),
-//     ],
-//     controllers: [AuthController],
-//     providers: [AuthService, JwtService, JwtStrategy],
-//     exports: [AuthService, JwtModule]
-// })
-
-// export class AuthModule {}

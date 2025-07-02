@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res, Req } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Res, Req,Get,Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response, Request } from 'express';
 import { SignupDto } from './dto/signup.dto';
@@ -18,7 +18,7 @@ import { RefreshTokenDto } from './dto/refreshToken.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly AuthService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Post('signup')
@@ -26,7 +26,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   async signup(@Body() dto: SignupDto) {
-    return this.AuthService.signup(dto);
+    return this.authService.signup(dto);
   }
 
   @Post('signin')
@@ -34,7 +34,7 @@ export class AuthController {
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'User Successflly logged in' })
   async signin(@Body() dto: SigninDto) {
-    return this.AuthService.signin(dto.email, dto.password);
+    return this.authService.signin(dto.email, dto.password);
   }
 
   @Post('refresh')
@@ -45,17 +45,26 @@ export class AuthController {
     description: 'Access token successfully refreshed',
   })
   async refresh(@Body() dto: RefreshTokenDto) {
-    return this.AuthService.refreshAccessToken(dto.refresh_token);
+    return this.authService.refreshAccessToken(dto.refresh_token);
   }
 
   @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiResponse({ status: 200, description: 'Logged out' })
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token');
     return { message: 'Logout successful' };
+  }
+  @Public()
+  @Get('verify-email/:token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({summary: 'Verify user email'})
+  @ApiResponse({status:200, description:"Email verified successfully"})
+  @ApiResponse({status: 400, description: "Invalid or expired verification token"})
+  async verifyEmail(@Param('token') token: string) {
+    return this.authService.verifyEmail(token)
   }
 }
 
