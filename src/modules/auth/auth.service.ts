@@ -12,7 +12,10 @@ import { ref } from 'process';
 import { create } from 'domain';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
-import { RefreshToken, VerificationToken } from '../../../generated/prisma/index';
+import {
+  RefreshToken,
+  VerificationToken,
+} from '../../../generated/prisma/index';
 import { access } from 'fs';
 import * as crypto from 'crypto';
 import { EmailService } from '../verify/verify.service';
@@ -84,11 +87,11 @@ export class AuthService {
         data: {
           userId: user.id,
           token: VerificationToken,
-          expiresAt: new Date(Date.now()+ 24 * 60*60*1000) //24 h
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), //24 h
         },
       });
       await this.emailService.sendVerificationEmail(email, VerificationToken);
-     
+
       console.log('User created:', user);
       const token = this.generateToken(user);
 
@@ -149,12 +152,10 @@ export class AuthService {
     };
   }
 
-
-
   private generateToken(user: User) {
     const secret = this.configService.get<string>('JWT_SECRET');
-    if(!secret) {
-      throw new Error(" JWT_SECRET is not defined");
+    if (!secret) {
+      throw new Error(' JWT_SECRET is not defined');
     }
     const payload = {
       sub: user.id,
@@ -163,24 +164,20 @@ export class AuthService {
       iss: 'my-app',
       aud: 'my-app-users',
     };
-    console.log("Generating token payload:" , payload);
-    try{
-
+    console.log('Generating token payload:', payload);
+    try {
       const token = this.jwtService.sign(payload, {
         secret,
         expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
       });
       return {
-      access_token: token,
-    };
-
-    } catch(err) {
-      console.error("Token Generation error:" , err);
+        access_token: token,
+      };
+    } catch (err) {
+      console.error('Token Generation error:', err);
       throw new UnauthorizedException('Failed to generate token');
     }
   }
-
- 
 
   async generateRefreshToken(user: User) {
     try {
@@ -213,27 +210,31 @@ export class AuthService {
   async refreshAccessToken(refreshToken: string) {
     try {
       const secret = this.configService.get<string>('JWT_REFRESH_SECRET');
-      if(!secret) {
+      if (!secret) {
         throw new Error('JWT_REFRESH_SECRET is not defined');
       }
-      const payload = this.jwtService.verify(refreshToken, {secret});
+      const payload = this.jwtService.verify(refreshToken, { secret });
       console.log('Refresh token payload:', payload);
 
-      const storedToken =await this.prisma.refreshToken.findFirst({
+      const storedToken = await this.prisma.refreshToken.findFirst({
         where: {
-          userId: payload.sub, expiresAt: {
-            gt: new Date()
-          }
-        }
+          userId: payload.sub,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
       });
-      if(!storedToken || !(await bcrypt.compare(refreshToken, storedToken.token))) {
+      if (
+        !storedToken ||
+        !(await bcrypt.compare(refreshToken, storedToken.token))
+      ) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
       const user = await this.prisma.user.findUnique({
-        where: {id: payload.sub},
+        where: { id: payload.sub },
       });
-      if(!user) {
+      if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
@@ -241,67 +242,72 @@ export class AuthService {
       const newRefreshToken = await this.generateRefreshToken(user);
 
       await this.prisma.refreshToken.delete({
-        where: { id: storedToken.id},
+        where: { id: storedToken.id },
       });
       console.log('Refresh token deleted:', storedToken.id);
-      
+
       return {
         access_token: newAccessToken,
         refreshToken: newRefreshToken,
-      }
-    } catch(err){
+      };
+    } catch (err) {
       this.logger.error('Refresh token Error:', err);
-      throw new UnauthorizedException("Invalid refresh token")
+      throw new UnauthorizedException('Invalid refresh token');
     }
- 
   }
-     async verifyEmail(token: string): Promise<{message: string}> {
-      if(!token || typeof token !== 'string' || token.length < 64) {
-        throw new BadRequestException('Invalid verification tokem format');
-      }
-      try{
-        return await this.prisma.$transaction(async(prisma) => {
-          const verificationToken = await prisma.verificationToken.findUnique({
-            where: { token},
-            include: { user: true},
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    if (!token || typeof token !== 'string' || token.length < 64) {
+      throw new BadRequestException('Invalid verification tokem format');
+    }
+    try {
+      return await this.prisma.$transaction(async (prisma) => {
+        const verificationToken = await prisma.verificationToken.findUnique({
+          where: { token },
+          include: { user: true },
+        });
+        if (!verificationToken) {
+          throw new BadRequestException('Invalid verification token');
+        }
+
+        if (verificationToken.expiresAt < new Date()) {
+          await prisma.verificationToken.delete({
+            where: { id: verificationToken.id },
           });
-          if(!verificationToken) {
-            throw new BadRequestException('Invalid verification token');
-          }
+          throw new BadRequestException('Expired verification token');
+        }
 
-          if(verificationToken.expiresAt < new Date()) {
-            await prisma.verificationToken.delete({
-              where: {id: verificationToken.id}
-            });
-            throw new BadRequestException('Expired verification token')
-          }
+        await Promise.all([
+          prisma.user.update({
+            where: { id: verificationToken.userId },
+            data: { isVerified: true, updatedAt: new Date() },
+          }),
+          prisma.verificationToken.delete({
+            where: { id: verificationToken.id },
+          }),
+        ]);
 
-          await Promise.all([
-            prisma.user.update({
-              where: {id: verificationToken.userId},
-              data: { isVerified: true, updatedAt: new Date()},
-            }),
-            prisma.verificationToken.delete({where: { id: verificationToken.id}}),
-          ]);
-
-          this.logger.log(`Email verified for user ${verificationToken.userId}`);
-          return {
-            message: 'Email verified successfully'
-          };
-        })
-
-      } catch(err) {
-        this.logger.error('Email verification failed', {err, token: this.radactToken(token)});
-        if(err instanceof BadRequestException) throw err;
-        throw new InternalServerErrorException('Email verification service unavailable');
-
-      }
-      
+        this.logger.log(`Email verified for user ${verificationToken.userId}`);
+        return {
+          message: 'Email verified successfully',
+        };
+      });
+    } catch (err) {
+      this.logger.error('Email verification failed', {
+        err,
+        token: this.radactToken(token),
+      });
+      if (err instanceof BadRequestException) throw err;
+      throw new InternalServerErrorException(
+        'Email verification service unavailable',
+      );
     }
+  }
 
-    private radactToken(token: string): string {
-      return token.length > 8 ? `${token.substring(0,2)}...${token.substring(token.length -2)}` : '[REDACTED]';
-    }
+  private radactToken(token: string): string {
+    return token.length > 8
+      ? `${token.substring(0, 2)}...${token.substring(token.length - 2)}`
+      : '[REDACTED]';
+  }
 
   // //refreshtoken endpoint
   // async refreshAccessToken(refreshToken: string) {

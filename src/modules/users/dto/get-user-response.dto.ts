@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsEmail, IsString } from 'class-validator';
 
 
@@ -23,5 +23,10 @@ export class GetUserResponseDto {
 
     //  @ApiProperty({ example: '2023-10-01T12:00:00Z', description: 'Timestamp when the user was created' })
     //  createdAt: Date;
+
+
+     @IsString()
+     @ApiPropertyOptional({example: 'imageurl', description: 'httt://example.com'})
+     userImageUrl: string;
 
 }

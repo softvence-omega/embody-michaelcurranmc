@@ -37,6 +37,8 @@ model User {
   name        String?
   displayName String?
   bio         String?
+  userImageUrl  String?
+  userImageBackurl String?
 
   is_premium      Boolean       @default(false)
   privecy_setting String        @default("public")
