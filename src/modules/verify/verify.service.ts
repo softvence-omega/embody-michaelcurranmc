@@ -33,7 +33,7 @@ export class EmailService {
       await this.transporter.verify();
       this.logger.log('Email  verified successfully');
     } catch (error) {
-      this.logger.error('Failed to verify email transporter', error);
+      this.logger.error('Failed to verify email ', error);
       throw error;
     }
   }
