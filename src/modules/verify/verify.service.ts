@@ -31,7 +31,7 @@ export class EmailService {
   private async verifyTransporter() {
     try {
       await this.transporter.verify();
-      this.logger.log('Email transporter verified successfully');
+      this.logger.log('Email  verified successfully');
     } catch (error) {
       this.logger.error('Failed to verify email transporter', error);
       throw error;
