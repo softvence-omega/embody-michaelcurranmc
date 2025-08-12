@@ -82,7 +82,7 @@ export class EmailService {
       throw new Error('Missing required parameters for verification email');
     }
 
-    const verificationLink = `${this.frontendUrl}/verify-email?token=${encodeURIComponent(token)}`;
+    const verificationLink = `${this.frontendUrl}/verify-email/${encodeURIComponent(token)}`;
     const subject = `Verify Your Email`;
     const text = `Please verify your email by clicking the following link: ${verificationLink}`;
     const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
