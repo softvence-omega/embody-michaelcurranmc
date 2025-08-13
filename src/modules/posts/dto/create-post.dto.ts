@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional,IsUUID, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -69,5 +69,6 @@ export class CreatePostDto {
   })
   @IsOptional()
   @IsString()
+  @IsUUID()
   workout_id?: string;
 }

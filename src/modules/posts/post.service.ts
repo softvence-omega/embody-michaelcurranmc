@@ -33,15 +33,12 @@ export class PostService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-
-
   async createPost(
     dto: CreatePostDto,
     file: Express.Multer.File | null,
     userId: string,
   ) {
     try {
-
       if (!userId) {
         throw new BadRequestException('User ID is required');
       }
@@ -52,15 +49,20 @@ export class PostService {
       if (!user) {
         throw new NotFoundException('User not found');
       }
-      if(!isUUID(dto.workout_id)) {
-        throw new BadRequestException(`Invalid workout_id format: ${dto.workout_id}`);
-
-      }
-      const workout = await this.prismaService.workouts.findUnique({
-        where: { id: dto.workout_id},
-      })
-      if(!workout) {
-        throw new NotFoundException(`Workout no found for ID: ${dto.workout_id}`);
+      if (dto.workout_id) {
+        if (!isUUID(dto.workout_id)) {
+          throw new BadRequestException(
+            `Invalid workout_id format: ${dto.workout_id}`,
+          );
+        }
+        const workout = await this.prismaService.workouts.findUnique({
+          where: { id: dto.workout_id },
+        });
+        if (!workout) {
+          throw new NotFoundException(
+            `Workout not found for ID: ${dto.workout_id}`,
+          );
+        }
       }
 
       // Optional: Restrict to specific roles (commented out)
@@ -73,7 +75,6 @@ export class PostService {
         public_id: string;
         resource_type: 'image' | 'video';
       } | null = null;
-
 
       if (file?.mimetype) {
         const mime = file.mimetype;
@@ -122,7 +123,8 @@ export class PostService {
           is_public: dto.is_public ?? true,
           is_featured: dto.is_featured ?? false,
           user_id: userId,
-          workout_id: dto.workout_id as string, // Ensure workout_id is string
+          // workout_id: dto.workout_id as string, 
+          workout_id: dto.workout_id ?? null,
           image_url:
             mediaUpload?.resource_type === 'image'
               ? mediaUpload.secure_url
@@ -380,14 +382,12 @@ export class PostService {
         throw err;
       }
       if (err instanceof PrismaClientKnownRequestError) {
-      if (err.code === 'P2025') {
-        throw new NotFoundException('Record not found during transaction');
+        if (err.code === 'P2025') {
+          throw new NotFoundException('Record not found during transaction');
+        }
+        throw new BadRequestException(`Database error: ${err.message}`);
       }
-      throw new BadRequestException(`Database error: ${err.message}`);
-    
 
-      }
-      
       throw new InternalServerErrorException(
         'You are unable to comment on this post at the moment. Please try again later.',
       );
@@ -426,8 +426,6 @@ export class PostService {
       );
     }
   }
-
-
 
   async sharePost(postId: string, userId: string) {
     try {
@@ -622,49 +620,51 @@ export class PostService {
     }
   }
 
-
-  async getComments(postId: string, skip =0, take = 10) {
-    try{
+  async getComments(postId: string, skip = 0, take = 10) {
+    try {
       const post = await this.prismaService.post.findUnique({
-        where: { id: postId}
-      })
-      if(!post) {
+        where: { id: postId },
+      });
+      if (!post) {
         throw new NotFoundException(`Post not Found for ID: ${postId}`);
       }
-
 
       const comments = await this.prismaService.postComment.findMany({
         where: { post_id: postId, parent_id: null },
         include: {
-          user: { select: {id: true, displayName: true}},
+          user: { select: { id: true, displayName: true } },
           replies: {
             include: {
-              user: { select: { id: true, displayName: true}},              
+              user: { select: { id: true, displayName: true } },
             },
-            orderBy: { created_at: 'desc'},
+            orderBy: { created_at: 'desc' },
           },
         },
-        orderBy: { created_at:'desc'},
+        orderBy: { created_at: 'desc' },
         skip,
         take,
       });
       const totalComments = await this.prismaService.postComment.count({
-        where: { post_id: postId},
+        where: { post_id: postId },
       });
-    console.log('your commment:',comments);
+      console.log('your commment:', comments);
       console.log('get comment', comments.length, 'total:', totalComments);
-       return {
-        comments, totalComments, commentCount: post.comment_count
-       }
-
-    } catch(err) {
-      if(err instanceof NotFoundException || err instanceof BadRequestException) {
+      return {
+        comments,
+        totalComments,
+        commentCount: post.comment_count,
+      };
+    } catch (err) {
+      if (
+        err instanceof NotFoundException ||
+        err instanceof BadRequestException
+      ) {
         throw err;
       }
-      throw new InternalServerErrorException(' Unable to fetch the comment at this moment');
-
+      throw new InternalServerErrorException(
+        ' Unable to fetch the comment at this moment',
+      );
     }
-
   }
 }
 
