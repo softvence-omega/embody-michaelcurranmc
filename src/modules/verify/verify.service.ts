@@ -31,7 +31,23 @@ export class EmailService {
   private async verifyTransporter() {
     try {
       await this.transporter.verify();
-      this.logger.log('Email  verified successfully');
+
+      const mailSuccess = `<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0b1020;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial;color:#e2e8f0;flex-direction:column;gap:16px;text-align:center;">
+  
+  <!-- Animated Success Icon -->
+  <svg style="width:96px;height:96px;" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="26" stroke="#22c55e" stroke-width="6" fill="none" opacity="0.35"/>
+    <path d="M18 34 L28 44 L46 24" stroke="#22c55e" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <animate attributeName="stroke-dasharray" from="0,100" to="100,0" dur="0.6s" fill="freeze"/>
+    </path>
+  </svg>
+
+  <!-- Success Message -->
+  <h1 style="margin:0;font-size:1.8rem;">Payment Successful</h1>
+  <p style="margin:0;color:#94a3b8;font-size:1rem;">Your payment has been processed successfully.</p>
+</div>
+`
+      this.logger.log(mailSuccess);
     } catch (error) {
       this.logger.error('Failed to verify email ', error);
       throw error;
