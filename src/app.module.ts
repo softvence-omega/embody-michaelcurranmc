@@ -15,6 +15,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { PostModule } from './modules/posts/post.module';
 import { CommonModule } from './common/common.module';
 import { EmailService } from './modules/verify/verify.service';
+import { WorkoutModule } from './modules/workout/workout.module';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ dotenv.config();
     CloudinaryModule,
     PostModule,
     CommonModule,
+    WorkoutModule,
 
   ],
   controllers: [AppController],

@@ -13,7 +13,7 @@ import { ErrorHandlerService } from "src/error/error-handler.service";
 @Module ({
     imports: [PrismaModule, AuthModule],
     controllers: [WorkoutController],
-    providers: [PrismaService, CloudinaryService, ExerciseUtilsService,ErrorHandlerService, WorkoutService, ],
+    providers: [ExerciseUtilsService,PrismaService, CloudinaryService,ErrorHandlerService, WorkoutService, ],
     exports:[WorkoutService],
 })
 

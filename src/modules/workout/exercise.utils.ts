@@ -10,6 +10,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { error } from 'console';
 import { timestamp } from 'rxjs';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 interface ExerciseWithSets {
   id: string;
@@ -25,7 +26,7 @@ export class ExerciseUtilsService {
   private readonly logger = new Logger(ExerciseUtilsService.name);
   private readonly batchSize: number = Number(process.env.BATCH_SIZE);
 
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async validateUpdateInput(id: string, dto: any) {
     const { exercise } = dto;
@@ -49,7 +50,7 @@ export class ExerciseUtilsService {
   }
 
   async checkSetExits(setId: string) {
-    const exists = await this.prisma.exerxiseSet.findUnique({
+    const exists = await this.prisma.exerciseSet.findUnique({
       where: { id: setId },
       select: { id: true },
     });

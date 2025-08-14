@@ -1,100 +1,100 @@
-Sign-up Process:
-1. User Interface:
-The user interacts with a form on a website or application, entering their desired username/email, password, and potentially other details (e.g., name, phone number).
-2. Data Validation:
-The application validates the entered data (e.g., email format, password strength).
-3. User Creation:
-If the data is valid, the application creates a new user record in a database. This record typically includes a unique user ID, username/email, hashed password, and potentially other profile information.
-4. Verification (Optional):
-To enhance security, an email or SMS verification step might be included, where the user confirms their contact information.
-5. Authentication:
-Upon successful verification (if included), the user is authenticated and a session is initiated. 
-Sign-in Process:
-User Interface: The user enters their username/email and password into a login form.
-Authentication Request: The application sends these credentials to the backend for verification.
-Password Hashing and Comparison: The backend retrieves the user's stored hashed password from the database. It then hashes the entered password using the same algorithm and compares the two hashes.
-Authentication Result: If the hashes match, the user is authenticated. Otherwise, the login attempt is rejected.
-Session Creation: A successful login initiates a user session, often using a session ID stored in a cookie or local storage, allowing the user to access protected resources. 
-Diagram Examples:
-Activity Diagram:
-Shows the flow of actions involved in both sign-up and sign-in processes, including decision points (e.g., valid data or invalid data).
-Sequence Diagram:
-Illustrates the interaction between the user, the application, and the database during the sign-up and sign-in processes. It shows the sequence of messages and responses exchanged between these components. 
+// Sign-up Process:
+// 1. User Interface:
+// The user interacts with a form on a website or application, entering their desired username/email, password, and potentially other details (e.g., name, phone number).
+// 2. Data Validation:
+// The application validates the entered data (e.g., email format, password strength).
+// 3. User Creation:
+// If the data is valid, the application creates a new user record in a database. This record typically includes a unique user ID, username/email, hashed password, and potentially other profile information.
+// 4. Verification (Optional):
+// To enhance security, an email or SMS verification step might be included, where the user confirms their contact information.
+// 5. Authentication:
+// Upon successful verification (if included), the user is authenticated and a session is initiated. 
+// Sign-in Process:
+// User Interface: The user enters their username/email and password into a login form.
+// Authentication Request: The application sends these credentials to the backend for verification.
+// Password Hashing and Comparison: The backend retrieves the user's stored hashed password from the database. It then hashes the entered password using the same algorithm and compares the two hashes.
+// Authentication Result: If the hashes match, the user is authenticated. Otherwise, the login attempt is rejected.
+// Session Creation: A successful login initiates a user session, often using a session ID stored in a cookie or local storage, allowing the user to access protected resources. 
+// Diagram Examples:
+// Activity Diagram:
+// Shows the flow of actions involved in both sign-up and sign-in processes, including decision points (e.g., valid data or invalid data).
+// Sequence Diagram:
+// Illustrates the interaction between the user, the application, and the database during the sign-up and sign-in processes. It shows the sequence of messages and responses exchanged between these components. 
 
 
 
- async createPost(
-    dto: CreatePostDto,
-    file: Express.Multer.File | null,
-    userId: string,
-  ) {
-    // Validate userId
-    if (!userId) {
-      throw new BadRequestException('User ID is required');
-    }
+//  async createPost(
+//     dto: CreatePostDto,
+//     file: Express.Multer.File | null,
+//     userId: string,
+//   ) {
+//     // Validate userId
+//     if (!userId) {
+//       throw new BadRequestException('User ID is required');
+//     }
 
-    // Validate user existence
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+//     // Validate user existence
+//     const user = await this.prismaService.user.findUnique({
+//       where: { id: userId },
+//     });
+//     if (!user) {
+//       throw new NotFoundException('User not found');
+//     }
 
-    // Handle media upload
-    let mediaUpload: {
-      secure_url: string;
-      public_id: string;
-      resource_type: 'image' | 'video';
-    } | null = null;
-    if (file) {
-      const mime = file.mimetype;
-      this.logger.log(`File MIME type: ${mime}`);
-      if (mime.startsWith('image/')) {
-        const uploadResult = await this.cloudinaryService.uploadImage(file);
-        if (uploadResult.resource_type !== 'image') {
-          throw new BadRequestException(
-            `Expected image resource, got ${uploadResult.resource_type}`,
-          );
-        }
-        mediaUpload = {
-          secure_url: uploadResult.secure_url,
-          public_id: uploadResult.public_id,
-          resource_type: uploadResult.resource_type,
-        };
-      } else if (mime.startsWith('video/')) {
-        const uploadResult = await this.cloudinaryService.uploadVideo(file);
-        if (uploadResult.resource_type !== 'video') {
-          throw new BadRequestException(
-            `Expected video resource, got ${uploadResult.resource_type}`,
-          );
-        }
-        mediaUpload = {
-          secure_url: uploadResult.secure_url,
-          public_id: uploadResult.public_id,
-          resource_type: uploadResult.resource_type,
-        };
-      } else {
-        throw new BadRequestException(`Unsupported file type: ${mime}`);
-      }
-    }
+//     // Handle media upload
+//     let mediaUpload: {
+//       secure_url: string;
+//       public_id: string;
+//       resource_type: 'image' | 'video';
+//     } | null = null;
+//     if (file) {
+//       const mime = file.mimetype;
+//       this.logger.log(`File MIME type: ${mime}`);
+//       if (mime.startsWith('image/')) {
+//         const uploadResult = await this.cloudinaryService.uploadImage(file);
+//         if (uploadResult.resource_type !== 'image') {
+//           throw new BadRequestException(
+//             `Expected image resource, got ${uploadResult.resource_type}`,
+//           );
+//         }
+//         mediaUpload = {
+//           secure_url: uploadResult.secure_url,
+//           public_id: uploadResult.public_id,
+//           resource_type: uploadResult.resource_type,
+//         };
+//       } else if (mime.startsWith('video/')) {
+//         const uploadResult = await this.cloudinaryService.uploadVideo(file);
+//         if (uploadResult.resource_type !== 'video') {
+//           throw new BadRequestException(
+//             `Expected video resource, got ${uploadResult.resource_type}`,
+//           );
+//         }
+//         mediaUpload = {
+//           secure_url: uploadResult.secure_url,
+//           public_id: uploadResult.public_id,
+//           resource_type: uploadResult.resource_type,
+//         };
+//       } else {
+//         throw new BadRequestException(`Unsupported file type: ${mime}`);
+//       }
+//     }
 
-    // Create post
-    const post = await this.prismaService.post.create({
-      data: {
-        title: dto.title,
-        content: dto.content,
-        caption: dto.caption,
-        is_public: dto.is_public ?? true,
-        is_featured: dto.is_featured ?? false,
-        user_id: userId,
-        image_url:
-          mediaUpload?.resource_type === 'image' ? mediaUpload.secure_url : null,
-        video_url:
-          mediaUpload?.resource_type === 'video' ? mediaUpload.secure_url : null,
-      },
-    });
+//     // Create post
+//     const post = await this.prismaService.post.create({
+//       data: {
+//         title: dto.title,
+//         content: dto.content,
+//         caption: dto.caption,
+//         is_public: dto.is_public ?? true,
+//         is_featured: dto.is_featured ?? false,
+//         user_id: userId,
+//         image_url:
+//           mediaUpload?.resource_type === 'image' ? mediaUpload.secure_url : null,
+//         video_url:
+//           mediaUpload?.resource_type === 'video' ? mediaUpload.secure_url : null,
+//       },
+//     });
 
-    this.logger.log(`Created post: ${post.id}`);
-    return post;
-  }
+//     this.logger.log(`Created post: ${post.id}`);
+//     return post;
+//   }

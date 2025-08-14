@@ -43,7 +43,7 @@ export class EmailService {
   </svg>
 
   <!-- Success Message -->
-  <h1 style="margin:0;font-size:1.8rem;">Payment Successful</h1>
+  <h1 style="margin:0;font-size:1.8rem;"> Successful</h1>
   <p style="margin:0;color:#94a3b8;font-size:1rem;">Your payment has been processed successfully.</p>
 </div>
 `;

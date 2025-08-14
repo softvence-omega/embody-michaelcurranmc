@@ -305,9 +305,9 @@ export class WorkoutService {
 
     try{
       const workout = await this.exerciseUtils.getWorkoutWithTimers(workoutId);
-      if(!workout ){
-        await this.toggleWorkoutTimer(workoutId, true);
-      }
+    if (!workout) {
+  throw new NotFoundException(`Workout ${workoutId} not found`);
+}
 
       for(const exercise of workout.exercises) {
         await this.processExerciseSequence(workoutId, exercise)
