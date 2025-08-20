@@ -31,26 +31,32 @@ model admin {
 }
 
 model User {
-  id          String  @id @default(uuid()) @map("_id")
-  email       String  @unique
-  password    String
-  name        String?
-  displayName String?
-  bio         String?
-  userImageUrl  String?
+  id               String  @id @default(uuid()) @map("_id")
+  email            String  @unique
+  password         String
+  name             String?
+  displayName      String?
+  bio              String?
+  userImageUrl     String?
   userImageBackurl String?
 
-  is_premium      Boolean       @default(false)
-  privecy_setting String        @default("public")
-  last_login_at   DateTime?     @default(now())
-  posts           Post[]        @relation("UserPosts")
-  postComments    PostComment[] // Added relation field
-  postLikes       PostLike[] // Added opposite relation field
-  postShares      PostShare[] // Added opposite relation field
-  workouts        Workouts[]    @relation("UserWorkouts")
-  refreshToken    RefreshToken? // Added opposite relation field
-  isVerified      Boolean @default(false)
+  is_premium         Boolean             @default(false)
+  privecy_setting    String              @default("public")
+  last_login_at      DateTime?           @default(now())
+  posts              Post[]              @relation("UserPosts")
+  postComments       PostComment[] // Added relation field
+  postLikes          PostLike[] // Added opposite relation field
+  postShares         PostShare[] // Added opposite relation field
+  workouts           Workouts[]          @relation("UserWorkouts")
+  refreshToken       RefreshToken? // Added opposite relation field
+  isVerified         Boolean             @default(false)
   verificationTokens VerificationToken[] // Added opposite relation field
+
+  //stripe related fields
+
+  stripeCustomerId     String?        @unique
+  stripeSubscriptionId String?        @unique
+  subscription         Subscription[]
 
   // Opposite relation fields for UserFollow
   followers UserFollow[] @relation("Following")
@@ -61,6 +67,8 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([displayName])
+  Payment Payment[]
+  Invoice Invoice[]
 }
 
 model UserFollow {
@@ -75,12 +83,13 @@ model UserFollow {
 }
 
 model VerificationToken {
-  id      String @id @default(uuid()) @map("_id")
-  userId  String
-  token    String @unique
-  expiresAt   DateTime
-  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid()) @map("_id")
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 model RefreshToken {
   id        String   @id @default(uuid()) @map("_id")
   token     String // Store hashed token
@@ -90,6 +99,122 @@ model RefreshToken {
   expiresAt DateTime
 
   @@index([userId])
+}
+
+// === Stripe payment schema model ======
+
+model SubscriptionPlan {
+  id              String          @id @default(uuid()) @map("_id")
+  name            String
+  description     String?
+  amount          Int
+  currency        String
+  stripePriceId   String          @unique // Stripe price ID
+  stripeProductId String          @unique // Stripe product ID
+  interval        BillingInterval // e.g., "month", "year"
+  is_active       Boolean         @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id     String           @id @default(uuid()) @map("_id")
+  user   User             @relation(fields: [userId], references: [id])
+  userId String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+  planId String
+
+  //stripe
+  stripeSubscriptionId String?            @unique
+  stripeCustomerId     String?            @unique
+  status               subscriptionStatus @default(incomplete)
+
+  //Billing details
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean   @default(false)
+  cancelAt           DateTime? // When the subscription is set to cancel
+  endedAt            DateTime? // When the subscription ended
+  trialStart         DateTime? // When the trial period starts
+  trialEnd           DateTime? // When the trial period ends
+
+  //payment method
+  paymentMethodId String?
+  payments        Payment[]
+  invoices        Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+}
+
+model Payment {
+  id        String        @id @default(uuid()) @map("_id")
+  user      User          @relation(fields: [userId], references: [id])
+  userId    String
+  amount    Int
+  currency  String
+  status    PaymentStatus @default(processing)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+  Subscription Subscription[]
+}
+
+model Invoice {
+  id                String     @id @default(uuid()) @map("_id")
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+
+  Subscription Subscription[]
+}
+
+// ====== all enums
+
+enum BillingInterval {
+  day
+  week
+  month
+  year
+}
+
+enum PaymentStatus {
+  requirs_payment_method
+  requires_confirmation
+  requires_action
+  requires_capture
+  processing
+  succeeded
+  failed
+  refunded
+  canceled
+}
+
+enum InvoiceStatus {
+  draft
+  open
+  paid
+  void
+  uncollectible
+}
+
+enum subscriptionStatus {
+  incomplete
+  incomplete_expired
+  active
+  past_due
+  trialing
+  unpaid
+  paused
+  canceled
 }
 
 enum Role {
@@ -123,7 +248,7 @@ model Post {
   admin_id String?
 
   workout    Workouts? @relation(fields: [workout_id], references: [id])
-  workout_id String?    @unique
+  workout_id String?   @unique
 
   @@index([created_at])
   @@index([title])
@@ -176,12 +301,12 @@ enum ExerciseType {
 }
 
 model Workouts {
-  id          String  @id @default(uuid()) @map("_id")
-  title       String
-  template_id String?
+  id           String  @id @default(uuid()) @map("_id")
+  title        String
+  template_id  String?
   description  String?
-  is_public   Boolean @default(true)
-  timer_active    Boolean @default(false)
+  is_public    Boolean @default(true)
+  timer_active Boolean @default(false)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -206,30 +331,30 @@ model Workouts {
 }
 
 model Exercise {
-  id         String        @id @default(uuid()) @map("_id")
-  workout    Workouts      @relation(fields: [workout_id], references: [id])
-  workout_id String
-  name       String         @default("")
-  type       ExerciseType?
-  timer_active     Boolean @default(false)
-  sets       ExerciseSet[]
-  created_at DateTime      @default(now())
+  id           String        @id @default(uuid()) @map("_id")
+  workout      Workouts      @relation(fields: [workout_id], references: [id])
+  workout_id   String
+  name         String        @default("")
+  type         ExerciseType?
+  timer_active Boolean       @default(false)
+  sets         ExerciseSet[]
+  created_at   DateTime      @default(now())
 
   @@index([workout_id])
   @@index([name])
 }
 
 model ExerciseSet {
-  id          String   @id @default(uuid()) @map("_id")
-  exercise    Exercise @relation(fields: [exercise_id], references: [id])
-  exercise_id String
-  set_number  Int  @default(1)
-  timer_active    Boolean @default(false)
-  weight      Float?
-  reps        Int?
-  distance_km Float?
-  duration    String  @default("00:00:00")
-  created_at  DateTime @default(now())
+  id           String   @id @default(uuid()) @map("_id")
+  exercise     Exercise @relation(fields: [exercise_id], references: [id])
+  exercise_id  String
+  set_number   Int      @default(1)
+  timer_active Boolean  @default(false)
+  weight       Float?
+  reps         Int?
+  distance_km  Float?
+  duration     String   @default("00:00:00")
+  created_at   DateTime @default(now())
 
   @@index([exercise_id])
 }
