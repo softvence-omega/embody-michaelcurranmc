@@ -11,7 +11,7 @@ class EnvironmentVariables {
   @IsString()
   EMAIL_PASS: string;
 
-  // Add other required variables
+
 }
 
 export function validate(config: Record<string, unknown>) {

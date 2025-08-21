@@ -62,13 +62,13 @@ model User {
   followers UserFollow[] @relation("Following")
   following UserFollow[] @relation("Follower")
 
-  role      Role     @default(user)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      Role      @default(user)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Payment   Payment[]
+  Invoice   Invoice[]
 
   @@index([displayName])
-  Payment Payment[]
-  Invoice Invoice[]
 }
 
 model UserFollow {
@@ -112,12 +112,17 @@ model SubscriptionPlan {
   stripePriceId   String          @unique // Stripe price ID
   stripeProductId String          @unique // Stripe product ID
   interval        BillingInterval // e.g., "month", "year"
-  is_active       Boolean         @default(true)
+  isActive        Boolean         @default(true)
+  intervalCount   Int             @default(1)
+  features        Json?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   subscriptions Subscription[]
+
+  @@index([stripePriceId])
+  @@index([isActive])
 }
 
 model Subscription {
@@ -156,25 +161,77 @@ model Subscription {
 }
 
 model Payment {
-  id        String        @id @default(uuid()) @map("_id")
-  user      User          @relation(fields: [userId], references: [id])
-  userId    String
-  amount    Int
-  currency  String
-  status    PaymentStatus @default(processing)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id             String        @id @default(uuid()) @map("_id")
+  user           User          @relation(fields: [userId], references: [id])
+  userId         String
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?
+
+  ///stripe fields
+  stripePaymentId   String  @unique // Stripe payment ID
+  stripeCustomerId  String
+
+  /// payment details
+  amount   Int
+  currency String
+  status   PaymentStatus @default(processing)
+  paymentMethod String?
+  description  String?
+
+  //metadata
+  metadata  Json?
+
+  //Refund information
+  refunded  Boolean @default(false)
+  refundAmount  Int?
+  refundReason  String?
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
 
   @@index([userId])
-  Subscription Subscription[]
+  @@index([stripePaymentId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Invoice {
-  id                String     @id @default(uuid()) @map("_id")
-  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
+  id     String @id @default(uuid()) @map("_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  Subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?
 
-  Subscription Subscription[]
+  //stripe fields
+  stripeInvoiceId String @unique
+  stripeCustomerId String 
+
+  //invoice details
+  number String?
+  amount Int
+  amountPaid Int  @default(0)
+  amountue Int  @default(0)
+  currency  String @default("usd")
+  status InvoiceStatus
+
+  //dates
+  periodStart DateTime?
+  periodEnd DateTime?
+  dueDate  DateTime?
+  paidAt DateTime?
+
+  //Invoice URL
+  hostedInvoiceUrl  String?
+  invoicePdf  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeInvoiceId])
+  @@index([status])
+
 }
 
 // ====== all enums
